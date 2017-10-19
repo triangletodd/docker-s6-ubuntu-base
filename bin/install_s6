@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+set -e
+set -o pipefail
+trap cleanup EXIT
+
+export DEBIAN_FRONTEND='noninteractive'
+export TMP_DIR='/tmp'
+
+export GH_USER='just-containers'
+export GH_REPO='s6-overlay'
+
+export S6_TGZ='s6-overlay-amd64.tar.gz'
+export S6_TMP_DIR="${TMP_DIR}/s6"
+export S6_TMP_FILE="${TMP_DIR}/${S6_TGZ}"
+
+export GHA='https://api.github.com'
+export GHA_REPOS="${GHA}/repos"
+export GHA_RELS="${GHA_REPOS}/${GH_USER}/${GH_REPO}/releases"
+export GHA_RELS_LATEST="${GHA_RELS}/latest"
+export GHA_RELS_LATEST_JSON="$(curl -s ${GHA_RELS_LATEST})"
+
+cleanup() {
+  echo "### $(basename $0) exiting..."
+  unset DEBIAN_FRONTEND GH_USER GH_REPO S6_TGZ S6_TMP_FILE S6_TMP_DIR GHA \
+        GHA_REPOS GHA_RELS GHA_RELS_LATEST GHA_RELS_LATEST_JSON
+}
+
+s6_latest_tag() {
+  local filter='.tag_name'
+  echo "${GHA_RELS_LATEST_JSON}" | jq -r "${filter}"
+}
+
+s6_latest_url() {
+  local filter=".assets[] | select(.name == \"${S6_TGZ}\" ) | .browser_download_url"
+  echo "${GHA_RELS_LATEST_JSON}" | jq -r "${filter}" | sed 's/https:/http:/'
+}
+
+download() {
+  echo "### downloading $(s6_latest_url)"
+  curl -sLko ${S6_TMP_FILE} $(s6_latest_url)
+}
+
+decompress() {
+  echo "### unpacking ${S6_TMP_FILE} to ${S6_TMP_DIR}"
+  mkdir -p "${S6_TMP_DIR}" && tar xzf "${S6_TMP_FILE}" -C "${S6_TMP_DIR}"
+}
+
+main() {
+  download
+  decompress
+}
+
+main "$@"
