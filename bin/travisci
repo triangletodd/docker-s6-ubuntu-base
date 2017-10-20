@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+set -e
+set -o pipefail
+trap clean EXIT
+
+err() { echo $(basename $0): "$@" 1>&2; exit 1 }
+
+clean() {
+  unset COMMIT DH_REPO TAG_COMMIT TAG_BUILD TAG_LATEST TAG_GIT_TAG
+}
+
+err_if_n() {
+  for var in "$@"; do
+    if [ -z "${!var}" ]; then
+      err "Env var: '${var}' can't be null."
+    fi
+  done
+}
+
+building_a_tag() {
+  [ -n "${TRAVIS_TAG}" ]
+}
+
+branch_is() {
+  [ "${TRAVIS_BRANCH}" == "${1}" ]
+}
+
+load_env() {
+  local req_vars="CI TRAVIS CONTINUOUS_INTEGRATION HAS_JOSH_K_SEAL_OF_APPROVAL \
+                  TRAVIS_COMMIT TRAVIS_BUILD_NUMBER DH_PROJECT DH_USER DH_PASS"
+  err_if_n ${req_vars}
+
+  export COMMIT=${TRAVIS_COMMIT::6}
+  export DH_REPO=${DH_USER}/${DH_PROJECT}
+  export TAG_COMMIT=${DH_REPO}:${COMMIT} # always
+  export TAG_BUILD=${DH_REPO}:travis-${TRAVIS_BUILD_NUMBER} # always
+  export TAG_LATEST=${DH_REPO}:latest # master push
+
+  if building_a_tag; then
+    export TAG_GIT_TAG=${DH_REPO}:${TRAVIS_TAG} # git tag push
+  fi
+}
+
+auth() {
+  docker login -u="$DH_USER" -p="$DH_PASS"
+}
+
+build() {
+  docker build -f Dockerfile -t ${TAG_COMMIT} .
+}
+
+tag() {
+  docker tag ${TAG_COMMIT} ${TAG_BUILD}
+
+  if building_a_tag; then
+    docker tag ${TAG_COMMIT} ${TAG_GIT_TAG}
+  fi
+
+  if branch_is 'master'; then
+    docker tag ${TAG_COMMIT} ${TAG_LATEST}
+  fi
+}
+
+push() {
+  docker push $DH_REPO
+}
+
+main() {
+  load_env
+
+  case "$1" in
+    build)       build                       ;;
+    tag)         tag                         ;;
+    push)        push                        ;;
+    *)           err $1 not implemented.     ;;
+  esac
+}
+
+main "$@"

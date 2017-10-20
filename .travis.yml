@@ -1,18 +1,14 @@
+if: (branch = master) OR (tag IS present)
+notifications:
+  email: false
 language: generic
 sudo: true
 services:
   - docker
-before_install:
+install:
   - sudo apt-get update -qq
   - sudo apt-get -y -qq -o Dpkg::Options::="--force-confnew" install docker-ce
-jobs:
-  include:
-    - stage: auth, build, push
-      script:
-        - export COMMIT=${TRAVIS_COMMIT::6}
-        - export REPO=$DH_USER/$DH_PROJECT
-        - docker login -u="$DH_USER" -p="$DH_PASS"
-        - docker build -f Dockerfile -t $REPO:$COMMIT .
-        - docker tag $REPO:$COMMIT $REPO:travis-$TRAVIS_BUILD_NUMBER
-        - docker push $REPO
-      if: (branch = master) OR (tag IS present)
+script: bin/travisci build
+after_success:
+  - bin/travisci tag
+  - bin/travisci push
