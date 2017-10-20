@@ -19,4 +19,5 @@ before_depoy:
   - bin/travisci auth
 
 deploy:
-  - bin/travisci push
+  provider: script
+  script: bin/travisci push
