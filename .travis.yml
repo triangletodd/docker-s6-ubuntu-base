@@ -1,3 +1,29 @@
+sudo: true
+services:
+  - docker
 env:
   global:
-    secure: BQVTxKZJ3NIf7utOgGErDjJvX4D74JzaPbfJrEv7Np5oF66MlTLOCsgyzNd5CBnKEwiHoriDyJR89CA9sWCPLmSgHReHrG/dEXzB7eGY7G6f0AjXrIflLeNC1aFyCkp1/5+1y3izPq4UKro1w1OTi/hlb3MW5NBFwtMBuCrIBePqzzgiY+j3iu761ltcS02BmywU8uirzDHt65Zs0NYWkDoY6Wtje86pYDwJLdOnRgnmh4bOH864i4/KD4kXu2tem5wUuEa5zoSUYWfWoxckJoE68wD9kWW6SFRoTStXRKrsI/6SHyNGDLk47HMRDv96GcJtDKd7v2qJ3+4NmqyMIfmlI2AzqRO4EE98cYWsPqjoRGSgdTQ+yRa5kr7u5kjoufkzGorwAxIPm9u/syoSp2/DMhtlsrJv3YVEwv73PJ7dQIxRevFTLPeAD2r1wizFONfht8z2j8Xz0R8Hi44xoTcVz6A3w8qmY+xld6AEAdSc7rlMdAh41ZHQzs4oIkgkmfVRicuVSShwueP2ZswP9SsRnsUYICpB7B5VIF8r4V9jTbyou5TSXt9P2iEmkey3OGOoUqSzTYTyaKm4s2WnZgXaicDKRw4QXyWFJEjp1k+0I8P78kF3iR+HsZf7PbVAeVO8Av8o5Zg3+8ta03Eh649yujPA3OswimjSa2RJM7o=
+  - DH_PROJECT=s6-ubuntu-base
+  - DH_REPO=$DH_USER/$DH_PROJECT
+before_install:
+  - sudo apt-get update -qq
+  - sudo apt-get -y -qq -o Dpkg::Options::="--force-confnew" install docker-ce
+jobs:
+  include:
+    - stage: info
+      - docker --version
+    - stage: docker auth
+      script:
+      - docker login -u="$DH_USER" -p="$DH_PASS"
+    - stage: build image
+      script:
+      - docker build -t $DH_REPO .
+      if: (branch = master) OR (tag IS present)
+    - stage: push latest tag
+      script:
+      - docker push $DH_REPO:lastest
+      if: false # (tag IS present) OR (branch = master)
+    - stage: push versioned tag
+      script:
+      - docker push $DH_REPO:$TAG
+      if: false # tag IS present
