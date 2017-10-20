@@ -5,8 +5,7 @@
 
 # s6-ubuntu-base
 
-JNLP Agent Docker image based on jenkins/jnlp-slave:latest with the gcloud
-SDK added.
+Base Docker image based on ubuntu/ubuntu that comes with the s6-overlay system preinstalled.
 
 ## License
 
