@@ -2,29 +2,14 @@ language: generic
 sudo: true
 services:
   - docker
-env:
-  global:
-    - DH_PROJECT=s6-ubuntu-base
-    - DH_REPO=$DH_USER/$DH_PROJECT
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get -y -qq -o Dpkg::Options::="--force-confnew" install docker-ce
 jobs:
   include:
-    - stage: info
-        - docker --version
-    - stage: docker auth
-      script:
-        - docker login -u="$DH_USER" -p="$DH_PASS"
-    - stage: build image
-      script:
-        - docker build -t $DH_REPO .
+    - stage: auth, build, push
+        - docker login -e="DH_EMAIL" -u="$DH_USER" -p="$DH_PASS"
+        - docker build -f Dockerfile -t $REPO:$COMMIT .
+        - docker tag $REPO:$COMMIT $REPO:travis-$TRAVIS_BUILD_NUMBER
+        - docker push $REPO
       if: (branch = master) OR (tag IS present)
-    - stage: push latest tag
-      script:
-        - docker push $DH_REPO:lastest
-      if: false # (tag IS present) OR (branch = master)
-    - stage: push versioned tag
-      script:
-        - docker push $DH_REPO:$TAG
-      if: false # tag IS present
