@@ -12,12 +12,9 @@ install:
   - sudo apt-get update -qq
   - sudo apt-get -y -qq -o Dpkg::Options::="--force-confnew" install docker-ce
 
-script: bin/travisci build
-
-before_depoy:
+script:
+  - bin/travisci build
   - bin/travisci tag
   - bin/travisci auth
+  - bin/travisci push
 
-deploy:
-  provider: script
-  script: bin/travisci push
