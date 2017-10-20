@@ -3,7 +3,7 @@ set -e
 set -o pipefail
 trap clean EXIT
 
-err() { echo $(basename $0): "$@" 1>&2; exit 1 }
+err() { echo $(basename $0): "$@" && exit 1 1>&2;  }
 
 clean() {
   unset COMMIT DH_REPO TAG_COMMIT TAG_BUILD TAG_LATEST TAG_GIT_TAG
