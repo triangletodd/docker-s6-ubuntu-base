@@ -70,6 +70,7 @@ main() {
   load_env
 
   case "$1" in
+    auth)        auth                        ;;
     build)       build                       ;;
     tag)         tag                         ;;
     push)        push                        ;;
