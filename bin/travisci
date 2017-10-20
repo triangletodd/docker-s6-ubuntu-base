@@ -3,7 +3,6 @@ set -e
 set -o pipefail
 trap clean EXIT
 
-info() { echo $(basename:$0): "$@" }
 err() { echo $(basename $0): "$@" && exit 1 1>&2;  }
 
 clean() {
@@ -59,8 +58,11 @@ build() {
 
 tag() {
   for tag in "$(tags_needed)"; do
-    info "Tagging ${IMAGE}:${COMMIT} -> ${IMAGE}:${tag}"
-    docker tag ${IMAGE}:${COMMIT} ${IMAGE}:${tag}
+    local source="${IMAGE}:${COMMIT}"
+    local target="${IMAGE}:${tag}"
+    
+    echo "### Tagging ${source} as ${target}."
+    docker tag ${source} ${target}
   done
 }
 
