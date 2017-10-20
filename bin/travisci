@@ -57,11 +57,10 @@ build() {
 }
 
 tag() {
-  for tag in "$(tags_needed)"; do
+  for tag in $(tags_needed); do
     local source="${IMAGE}:${COMMIT}"
     local target="${IMAGE}:${tag}"
-    
-    echo "### Tagging ${source} as ${target}."
+
     docker tag ${source} ${target}
   done
 }
