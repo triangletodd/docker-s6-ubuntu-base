@@ -6,7 +6,7 @@ trap clean EXIT
 err() { echo $(basename $0): "$@" && exit 1 1>&2;  }
 
 clean() {
-  unset COMMIT DH_REPO TAG_COMMIT TAG_BUILD TAG_LATEST TAG_GIT_TAG
+  unset COMMIT IMAGE
 }
 
 err_if_n() {
@@ -17,12 +17,26 @@ err_if_n() {
   done
 }
 
-building_a_tag() {
-  [ -n "${TRAVIS_TAG}" ]
+i_am_a_tag() {
+  [ -n "${TRAVIS_TAG}" ];
 }
 
 branch_is() {
-  [ "${TRAVIS_BRANCH}" == "${1}" ]
+  [ "${TRAVIS_BRANCH}" == "${1}" ];
+}
+
+tags_needed() {
+  local tags="travis-${TRAVIS_BUILD_NUMBER}"
+
+  if i_am_a_tag; then
+    tags="${tags} ${TRAVIS_TAG}"
+  fi
+
+  if branch_is 'master'; then
+    tags="${tags} latest"
+  fi
+
+  echo ${tags}
 }
 
 load_env() {
@@ -31,14 +45,7 @@ load_env() {
   err_if_n ${req_vars}
 
   export COMMIT=${TRAVIS_COMMIT::6}
-  export DH_REPO=${DH_USER}/${DH_PROJECT}
-  export TAG_COMMIT=${DH_REPO}:${COMMIT} # always
-  export TAG_BUILD=${DH_REPO}:travis-${TRAVIS_BUILD_NUMBER} # always
-  export TAG_LATEST=${DH_REPO}:latest # master push
-
-  if building_a_tag; then
-    export TAG_GIT_TAG=${DH_REPO}:${TRAVIS_TAG} # git tag push
-  fi
+  export IMAGE=${DH_USER}/${DH_PROJECT}
 }
 
 auth() {
@@ -46,23 +53,17 @@ auth() {
 }
 
 build() {
-  docker build -f Dockerfile -t ${TAG_COMMIT} .
+  docker build -f Dockerfile -t ${IMAGE}:${COMMIT} .
 }
 
 tag() {
-  docker tag ${TAG_COMMIT} ${TAG_BUILD}
-
-  if building_a_tag; then
-    docker tag ${TAG_COMMIT} ${TAG_GIT_TAG}
-  fi
-
-  if branch_is 'master'; then
-    docker tag ${TAG_COMMIT} ${TAG_LATEST}
-  fi
+  for tag in "$(tags_needed)"; do
+    docker tag ${IMAGE}:${COMMIT} ${IMAGE}:${tag}
+  done
 }
 
 push() {
-  docker push $DH_REPO
+  docker push ${IMAGE}
 }
 
 main() {

@@ -1,14 +1,22 @@
 if: (branch = master) OR (tag IS present)
 notifications:
   email: false
+
 language: generic
 sudo: true
+
 services:
   - docker
+
 install:
   - sudo apt-get update -qq
   - sudo apt-get -y -qq -o Dpkg::Options::="--force-confnew" install docker-ce
+
 script: bin/travisci build
-after_success:
+
+before_depoy:
   - bin/travisci tag
+  - bin/travisci auth
+
+deploy:
   - bin/travisci push
