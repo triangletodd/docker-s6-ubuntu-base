@@ -9,7 +9,9 @@ jobs:
   include:
     - stage: auth, build, push
       script:
-        - docker login -e="DH_EMAIL" -u="$DH_USER" -p="$DH_PASS"
+        - export COMMIT="${TRAVIS_COMMIT::6}"
+        - export REPO="$DH_USER/$DH_PROJECT"
+        - docker login -e="$DH_EMAIL" -u="$DH_USER" -p="$DH_PASS"
         - docker build -f Dockerfile -t $REPO:$COMMIT .
         - docker tag $REPO:$COMMIT $REPO:travis-$TRAVIS_BUILD_NUMBER
         - docker push $REPO
