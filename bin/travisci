@@ -1,15 +1,22 @@
 #!/usr/bin/env bash
+#
+# In order for this script to work you have to add the following env vars to
+# TravisCI:
+#
+#   DH_USER:  your dockerhub username
+#   DH_PASS:  your dockerhub password
+#   DH_PROJECT: your dockerhub project
+#
+#   Example for https://hub.docker.com/r/todd/s6-ubuntu-base/
+#     DH_USER: todd
+#     DH_PROJECT: s6-ubuntu-base
+#
 set -e
 set -o pipefail
-trap clean EXIT
 
 err() { echo $(basename $0): "$@" && exit 1 1>&2;  }
 
-clean() {
-  unset COMMIT IMAGE
-}
-
-err_if_n() {
+err_unless_set() {
   for var in "$@"; do
     if [ -z "${!var}" ]; then
       err "Env var: '${var}' can't be null."
@@ -42,7 +49,7 @@ tags_needed() {
 load_env() {
   local req_vars="CI TRAVIS CONTINUOUS_INTEGRATION HAS_JOSH_K_SEAL_OF_APPROVAL \
                   TRAVIS_COMMIT TRAVIS_BUILD_NUMBER DH_PROJECT DH_USER DH_PASS"
-  err_if_n ${req_vars}
+  err_unless_set ${req_vars}
 
   export COMMIT=${TRAVIS_COMMIT::6}
   export IMAGE=${DH_USER}/${DH_PROJECT}

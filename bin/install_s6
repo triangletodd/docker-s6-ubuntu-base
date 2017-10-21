@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -e
 set -o pipefail
-trap cleanup EXIT
 
 export DEBIAN_FRONTEND='noninteractive'
 export TMP_DIR='/tmp'
@@ -18,11 +17,6 @@ export GHA_REPOS="${GHA}/repos"
 export GHA_RELS="${GHA_REPOS}/${GH_USER}/${GH_REPO}/releases"
 export GHA_RELS_LATEST="${GHA_RELS}/latest"
 export GHA_RELS_LATEST_JSON="$(curl -s ${GHA_RELS_LATEST})"
-
-cleanup() {
-  unset DEBIAN_FRONTEND GH_USER GH_REPO S6_TGZ S6_TMP_FILE S6_TMP_DIR GHA \
-        GHA_REPOS GHA_RELS GHA_RELS_LATEST GHA_RELS_LATEST_JSON
-}
 
 s6_latest_tag() {
   local filter='.tag_name'
